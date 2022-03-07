@@ -5,7 +5,7 @@ namespace Slqsh;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddSqlsh(this IServiceCollection services, SlashCommandServiceConfiguration configuration = null)
+    public static IServiceCollection AddSlqsh(this IServiceCollection services, SlashCommandServiceConfiguration configuration = null)
     {
         configuration ??= SlashCommandServiceConfiguration.Default;
         services.AddSingleton(configuration);

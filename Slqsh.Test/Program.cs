@@ -19,7 +19,7 @@ var host = new HostBuilder()
     })
     .ConfigureServices(services =>
     {
-        services.AddSqlsh();
+        services.AddSlqsh();
     })
     .ConfigureDiscordClient((context, client) =>
     {
