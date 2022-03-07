@@ -6,7 +6,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Qmmands;
-using Qommon.Collections;
 
 namespace Slqsh;
 
@@ -40,27 +39,8 @@ public class SlashCommandService : IHostedService
     
     public IReadOnlyDictionary<string, Command> RawCommands { get; private set; }
 
-    public virtual async Task RegisterSlashCommandsAsync()
+    public virtual ValueTask RegisterInternalCommandsAsync()
     {
-        // 1. Register auto-complete resolvers
-        // 2. Register Qmmands commands
-        // 3. Register type parsers
-        // 4. Convert registered commands into JSON commands
-        // 5. Read from Commands.json, and write to it if empty
-        // 6. Compare stored commands (if any) to converted commands, generate add/modify/remove list
-        // 7. Add/modify/remove slash commands
-        // 8. If successful, write Commands.json to file
-
-        // 1. Register auto-complete resolvers
-        foreach (var resolver in _services.GetServices<AutoCompleteResolver>())
-        {
-            _autoCompleteResolvers[resolver.ResolveForType] = resolver;
-        }
-
-        _logger.LogInformation("Registered {Count} slash command auto-complete resolvers.", _autoCompleteResolvers.Count);
-
-        // 2. Register Qmmands commands
-        var allModules = new List<Module>();
         foreach (var assembly in _configuration.SlashCommandModuleAssemblies)
         {
             try
@@ -90,18 +70,50 @@ public class SlashCommandService : IHostedService
                         }
                     }
                 }
-
-                allModules.AddRange(modules);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Unable to register internal local commands.");
-                return;
             }
         }
 
+        return ValueTask.CompletedTask;
+    }
+
+    public virtual async Task RegisterSlashCommandsAsync()
+    {
+        // 1. Register auto-complete resolvers
+        // 2. Register Qmmands commands
+        // 3. Register type parsers
+        // 4. Convert registered commands into JSON commands
+        // 5. Read from Commands.json, and write to it if empty
+        // 6. Compare stored commands (if any) to converted commands, generate add/modify/remove list
+        // 7. Add/modify/remove slash commands
+        // 8. If successful, write Commands.json to file
+
+        // 1. Register auto-complete resolvers
+        foreach (var resolver in _services.GetServices<AutoCompleteResolver>())
+        {
+            _autoCompleteResolvers[resolver.ResolveForType] = resolver;
+        }
+
+        _logger.LogInformation("Registered {Count} slash command auto-complete resolvers.", _autoCompleteResolvers.Count);
+
+        // 2. Register Qmmands commands
+        try
+        {
+            await RegisterInternalCommandsAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unable to register internal commands via Qmmands.");
+            return;
+        }
+
+        var modules = _commands.TopLevelModules;
+
         _logger.LogInformation("Registered {ModuleCount} internal modules with {CommandCount} total commands.",
-            allModules.Count, allModules.SelectMany(x => x.Commands).Count());
+            modules.Count, _commands.GetAllCommands().Count);
 
         RawCommands = _commands.GetAllCommands().ToDictionary(command => command.Name);
 
@@ -119,7 +131,7 @@ public class SlashCommandService : IHostedService
         // 4. Convert registered commands into JSON commands
         var slashCommands = new List<JsonSlashCommand>();
         // At the moment, slash commands can never be more then three layers deep. "one two three [args]" is the deepest, so only one submodule loop is necessary
-        foreach (var module in allModules)
+        foreach (var module in modules)
         {
             if (module.Aliases.SingleOrDefault() is { } groupAlias)
             {
@@ -542,6 +554,7 @@ public class SlashCommandService : IHostedService
         };
     }
 
+    // Done only so the service can actually get instantiated.
     Task IHostedService.StartAsync(CancellationToken cancellationToken)
         => Task.CompletedTask;
 
