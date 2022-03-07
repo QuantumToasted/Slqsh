@@ -7,7 +7,7 @@ Slqsh is a drop-in supplement¹ to your [Disqord](https://github.com/Quahu/Disqo
 Versioning will be a bit wonky because I simply CBA to implement actions to automate deployment. Bear with me.
 
 # Installation
-TODO
+Add `https://www.myget.org/F/quantumtoast/api/v3/index.json` to your NuGet package source list, then install Slqsh via your preferred method.
 
 # Usage
 Simple as. Simply chain `.AddSlqsh()` to your service collection implementation, most likely inside `.ConfigureServices()` in your host of choice.
