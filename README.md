@@ -12,4 +12,5 @@ Command implementations are nearly identical to Disqord.Bot's own system. All cl
 
 ## Notes
 ¹ This library is only intended to be a band-aid, holdover temporary library until Disqord's own slash command implementation is implemented.
+
 ² This library is only meant to be a simple way to convert an existing text command bot to a slash command bot and is not meant as a full-featured suite of slash command support. Anything involving modals, buttons, or selects is highly unlikely to be implemented.
