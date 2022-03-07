@@ -1,13 +1,13 @@
 ![slqsh](https://user-images.githubusercontent.com/30324210/157002663-43625fe1-25f4-4bea-8502-1234fe763572.gif)
 
-Pronounced "squish". No, I will not elaborate or budge on this.
+Pronounced "sliquish". No, I will not elaborate or budge on this.
 
 Slqsh is a drop-in supplement¹ to your [Disqord](https://github.com/Quahu/Disqord) bot of choice. It aims to be a standalone slash command interop library, capable of doing most² things currently possible via Discord's own slash command implementation.
 
 Versioning will be a bit wonky because I simply CBA to implement actions to automate deployment. Bear with me.
 
 # Installation
-TODO
+Add `https://www.myget.org/F/quantumtoast/api/v3/index.json` to your NuGet package source list, then install Slqsh via your preferred method.
 
 # Usage
 Simple as. Simply chain `.AddSlqsh()` to your service collection implementation, most likely inside `.ConfigureServices()` in your host of choice.
