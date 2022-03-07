@@ -1,5 +1,7 @@
 ![slqsh](https://user-images.githubusercontent.com/30324210/157002663-43625fe1-25f4-4bea-8502-1234fe763572.gif)
 
+![MyGet](https://img.shields.io/myget/quantumtoast/v/Slqsh)
+
 Pronounced "sliquish". No, I will not elaborate or budge on this.
 
 Slqsh is a drop-in supplement¹ to your [Disqord](https://github.com/Quahu/Disqord) bot of choice. It aims to be a standalone slash command interop library, capable of doing most² things currently possible via Discord's own slash command implementation.
