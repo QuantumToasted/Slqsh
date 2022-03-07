@@ -20,4 +20,6 @@ public class SlashCommandServiceConfiguration
     public IEnumerable<Type> NumberTypes { get; init; } = CommandExtensions.DefaultNumberTypes;
 
     public string CommandDataFilePath { get; init; } = "./";
+
+    public string CommandDataFileName { get; init; } = "Commands.json";
 }

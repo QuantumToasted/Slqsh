@@ -11,41 +11,46 @@ namespace Slqsh;
 
 public class SlashCommandService : IHostedService
 {
-    private readonly IServiceProvider _services;
-    private readonly DiscordClientBase _client;
-    private readonly SlashCommandServiceConfiguration _configuration;
     private readonly Dictionary<Type, AutoCompleteResolver> _autoCompleteResolvers;
-    private readonly ILogger _logger;
-    private readonly CommandService _commands;
     private bool _firstReady;
 
     public SlashCommandService(IServiceProvider services, SlashCommandServiceConfiguration configuration, 
         DiscordClientBase client, ILogger<SlashCommandService> logger)
     {
-        _services = services;
-        _client = client;
-        _configuration = configuration;
+        Services = services;
+        Client = client;
+        Configuration = configuration;
         _autoCompleteResolvers = new();
-        _logger = logger;
-        _commands = new CommandService(new CommandServiceConfiguration
+        Logger = logger;
+        Commands = new CommandService(new CommandServiceConfiguration
         {
             DefaultArgumentParser = SlashCommandArgumentParser.Instance
         });
 
-        _commands.CommandExecuted += OnCommandExecuted;
-        _client.Ready += OnReady;
-        _client.InteractionReceived += OnInteractionReceived;
+        Commands.CommandExecuted += OnCommandExecuted;
+        Client.Ready += OnReady;
+        Client.InteractionReceived += OnInteractionReceived;
     }
     
+    protected IServiceProvider Services { get; }
+
+    protected DiscordClientBase Client { get; }
+
+    protected SlashCommandServiceConfiguration Configuration { get; }
+
+    protected ILogger Logger { get; }
+
+    protected CommandService Commands { get; }
+
     public IReadOnlyDictionary<string, Command> RawCommands { get; private set; }
 
     public virtual ValueTask RegisterInternalCommandsAsync()
     {
-        foreach (var assembly in _configuration.SlashCommandModuleAssemblies)
+        foreach (var assembly in Configuration.SlashCommandModuleAssemblies)
         {
             try
             {
-                var modules = _commands.AddModules(assembly);
+                var modules = Commands.AddModules(assembly);
 
                 foreach (var module in modules)
                 {
@@ -73,7 +78,7 @@ public class SlashCommandService : IHostedService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unable to register internal local commands.");
+                Logger.LogError(ex, "Unable to register internal local commands.");
             }
         }
 
@@ -86,18 +91,18 @@ public class SlashCommandService : IHostedService
         // 2. Register Qmmands commands
         // 3. Register type parsers
         // 4. Convert registered commands into JSON commands
-        // 5. Read from Commands.json, and write to it if empty
+        // 5. Read from CommandDataFileName, and write to it if empty
         // 6. Compare stored commands (if any) to converted commands, generate add/modify/remove list
         // 7. Add/modify/remove slash commands
-        // 8. If successful, write Commands.json to file
+        // 8. If successful, write CommandDataFileName to file
 
         // 1. Register auto-complete resolvers
-        foreach (var resolver in _services.GetServices<AutoCompleteResolver>())
+        foreach (var resolver in Services.GetServices<AutoCompleteResolver>())
         {
             _autoCompleteResolvers[resolver.ResolveForType] = resolver;
         }
 
-        _logger.LogInformation("Registered {Count} slash command auto-complete resolvers.", _autoCompleteResolvers.Count);
+        Logger.LogInformation("Registered {Count} slash command auto-complete resolvers.", _autoCompleteResolvers.Count);
 
         // 2. Register Qmmands commands
         try
@@ -106,16 +111,16 @@ public class SlashCommandService : IHostedService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unable to register internal commands via Qmmands.");
+            Logger.LogError(ex, "Unable to register internal commands via Qmmands.");
             return;
         }
 
-        var modules = _commands.TopLevelModules;
+        var modules = Commands.TopLevelModules;
 
-        _logger.LogInformation("Registered {ModuleCount} internal modules with {CommandCount} total commands.",
-            modules.Count, _commands.GetAllCommands().Count);
+        Logger.LogInformation("Registered {ModuleCount} internal modules with {CommandCount} total commands.",
+            modules.Count, Commands.GetAllCommands().Count);
 
-        RawCommands = _commands.GetAllCommands().ToDictionary(command => command.Name);
+        RawCommands = Commands.GetAllCommands().ToDictionary(command => command.Name);
 
         // 3. Register type parsers
         try
@@ -124,7 +129,7 @@ public class SlashCommandService : IHostedService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unable to register slash command type parsers.");
+            Logger.LogError(ex, "Unable to register slash command type parsers.");
             return;
         }
 
@@ -149,7 +154,7 @@ public class SlashCommandService : IHostedService
 
                     foreach (var parameter in command.Parameters)
                     {
-                        option.AddOption(parameter.ToSlashCommandOption(_configuration));
+                        option.AddOption(parameter.ToSlashCommandOption(Configuration));
                     }
 
                     slashCommand.AddOption(option);
@@ -174,7 +179,7 @@ public class SlashCommandService : IHostedService
 
                         foreach (var parameter in subCommand.Parameters)
                         {
-                            subOption.AddOption(parameter.ToSlashCommandOption(_configuration));
+                            subOption.AddOption(parameter.ToSlashCommandOption(Configuration));
                         }
 
                         option.AddOption(subOption);
@@ -195,7 +200,7 @@ public class SlashCommandService : IHostedService
 
                     foreach (var parameter in command.Parameters)
                     {
-                        slashCommand.AddOption(parameter.ToSlashCommandOption(_configuration));
+                        slashCommand.AddOption(parameter.ToSlashCommandOption(Configuration));
                     }
 
                     slashCommands.Add(new JsonSlashCommand(slashCommand));
@@ -203,7 +208,7 @@ public class SlashCommandService : IHostedService
 
                 if (module.Submodules.Count > 0)
                 {
-                    _logger.LogError("Submodule {Submodule} was found in un-grouped module {Module}!",
+                    Logger.LogError("Submodule {Submodule} was found in un-grouped module {Module}!",
                         module.Submodules[0].Name,
                         module.Name);
 
@@ -212,35 +217,35 @@ public class SlashCommandService : IHostedService
             }
         }
 
-        // 5. Read from Commands.json, and write to it if empty
+        // 5. Read from CommandDataFileName, and write to it if empty
         try
         {
-            Directory.CreateDirectory(_configuration.CommandDataFilePath);
+            Directory.CreateDirectory(Configuration.CommandDataFilePath);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Unable to create the specified directory {DirectoryName}.", _configuration.CommandDataFilePath);
+            Logger.LogError(ex, "Unable to create the specified directory {DirectoryName}.", Configuration.CommandDataFilePath);
             return;
         }
 
-        var filePath = Path.Combine(_configuration.CommandDataFilePath, "Commands.json");
+        var filePath = Path.Combine(Configuration.CommandDataFilePath, Configuration.CommandDataFileName);
 
         var storedCommands = new List<JsonSlashCommand>();
         if (!File.Exists(filePath))
         {
-            _logger.LogWarning("{Path} was not found - remote slash command data will now be loaded.",
+            Logger.LogWarning("{Path} was not found - remote slash command data will now be loaded.",
                 filePath);
 
-            var existingCommands = await _client.FetchGlobalApplicationCommandsAsync(_client.CurrentUser.Id);
+            var existingCommands = await Client.FetchGlobalApplicationCommandsAsync(Client.CurrentUser.Id);
             var existingSlashCommands = existingCommands.OfType<ISlashCommand>().ToList();
 
             if (existingSlashCommands.Count == 0)
             {
-                _logger.LogWarning("No remote slash commands were found. All registered commands will be added.");
+                Logger.LogWarning("No remote slash commands were found. All registered commands will be added.");
             }
             else
             {
-                _logger.LogInformation("Found {Count} existing remote slash commands to save.", existingSlashCommands.Count);
+                Logger.LogInformation("Found {Count} existing remote slash commands to save.", existingSlashCommands.Count);
 
                 storedCommands = existingSlashCommands.Select(x => new JsonSlashCommand(x)).ToList();
 
@@ -251,11 +256,11 @@ public class SlashCommandService : IHostedService
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Unable to save remote slash command data to {Path}.", filePath);
+                    Logger.LogError(ex, "Unable to save remote slash command data to {Path}.", filePath);
                     return;
                 }
 
-                _logger.LogInformation("Saved remote slash command data to {Path}.", filePath);
+                Logger.LogInformation("Saved remote slash command data to {Path}.", filePath);
             }
         }
         else
@@ -267,7 +272,7 @@ public class SlashCommandService : IHostedService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unable to read local slash command data from existing file {Path}.", filePath);
+                Logger.LogError(ex, "Unable to read local slash command data from existing file {Path}.", filePath);
             }
         }
 
@@ -278,21 +283,21 @@ public class SlashCommandService : IHostedService
 
         if (storedCommands.Count == 0)
         {
-            _logger.LogWarning("{Path} contains no commands (or no remote slash commands exist). Setting all slash commands instead of adding.", filePath);
+            Logger.LogWarning("{Path} contains no commands (or no remote slash commands exist). Setting all slash commands instead of adding.", filePath);
 
             IReadOnlyList<IApplicationCommand> newCommands;
             try
             {
-                newCommands = await _client.SetGlobalApplicationCommandsAsync(_client.CurrentUser.Id,
+                newCommands = await Client.SetGlobalApplicationCommandsAsync(Client.CurrentUser.Id,
                     slashCommands.Select(x => x.ToLocalCommand()));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unable to set global slash commands.");
+                Logger.LogError(ex, "Unable to set global slash commands.");
                 return;
             }
 
-            _logger.LogInformation("Successfully set {Count} new global slash commands.", newCommands.Count);
+            Logger.LogInformation("Successfully set {Count} new global slash commands.", newCommands.Count);
 
             foreach (var command in slashCommands)
             {
@@ -307,11 +312,11 @@ public class SlashCommandService : IHostedService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unable to save local slash command data to {Path}.", filePath);
+                Logger.LogError(ex, "Unable to save local slash command data to {Path}.", filePath);
                 return;
             }
 
-            _logger.LogInformation("Saved local slash command data to {Path}.", filePath);
+            Logger.LogInformation("Saved local slash command data to {Path}.", filePath);
             return;
         }
 
@@ -341,7 +346,7 @@ public class SlashCommandService : IHostedService
             }
         }
 
-        _logger.LogInformation("Found {AddCount} slash commands to add, {ModifyCount} to modify, and {DeleteCount} to delete.",
+        Logger.LogInformation("Found {AddCount} slash commands to add, {ModifyCount} to modify, and {DeleteCount} to delete.",
             commandsToAdd.Count,
             commandsToModify.Count,
             commandsToDelete.Count);
@@ -351,12 +356,12 @@ public class SlashCommandService : IHostedService
         {
             try
             {
-                var newCommand = await _client.CreateGlobalApplicationCommandAsync(_client.CurrentUser.Id, command.ToLocalCommand());
+                var newCommand = await Client.CreateGlobalApplicationCommandAsync(Client.CurrentUser.Id, command.ToLocalCommand());
                 command.Id = newCommand.Id;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unable to add global slash command {Name}.", command.Name);
+                Logger.LogError(ex, "Unable to add global slash command {Name}.", command.Name);
                 return;
             }
         }
@@ -365,7 +370,7 @@ public class SlashCommandService : IHostedService
         {
             try
             {
-                var modifiedCommand = await _client.ModifyGlobalApplicationCommandAsync(_client.CurrentUser.Id, command.Id, x =>
+                var modifiedCommand = await Client.ModifyGlobalApplicationCommandAsync(Client.CurrentUser.Id, command.Id, x =>
                 {
                     x.Description = command.Description;
                     x.IsEnabledByDefault = command.IsEnabledByDefault;
@@ -380,7 +385,7 @@ public class SlashCommandService : IHostedService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unable to modify global slash command {Name} ({Id}).", command.Name, command.Id);
+                Logger.LogError(ex, "Unable to modify global slash command {Name} ({Id}).", command.Name, command.Id);
                 return;
             }
         }
@@ -389,16 +394,16 @@ public class SlashCommandService : IHostedService
         {
             try
             {
-                await _client.DeleteGlobalApplicationCommandAsync(_client.CurrentUser.Id, command.Id);
+                await Client.DeleteGlobalApplicationCommandAsync(Client.CurrentUser.Id, command.Id);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unable to delete global slash command {Name} ({Id}).", command.Name, command.Id);
+                Logger.LogError(ex, "Unable to delete global slash command {Name} ({Id}).", command.Name, command.Id);
                 return;
             }
         }
 
-        // 8. If there are any new or modified commands, write Commands.json to file
+        // 8. If there are any new or modified commands, write CommandDataFileName to file
         if (commandsToAdd.Count > 0 || commandsToModify.Count > 0)
         {
             try
@@ -408,24 +413,24 @@ public class SlashCommandService : IHostedService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unable to save local slash command data to {Path}.", filePath);
+                Logger.LogError(ex, "Unable to save local slash command data to {Path}.", filePath);
                 return;
             }
 
-            _logger.LogInformation("Saved local slash command data to {Path}.", filePath);
+            Logger.LogInformation("Saved local slash command data to {Path}.", filePath);
         }
     }
 
     public virtual ValueTask AddTypeParsersAsync()
     {
-        _commands.AddTypeParser(new GuildChannelTypeParser<IGuildChannel>());
-        _commands.AddTypeParser(new GuildChannelTypeParser<ITextChannel>());
-        _commands.AddTypeParser(new GuildChannelTypeParser<IVoiceChannel>());
-        _commands.AddTypeParser(new GuildChannelTypeParser<ICategoryChannel>());
-        _commands.AddTypeParser(new GuildChannelTypeParser<IThreadChannel>());
-        _commands.AddTypeParser(new MemberTypeParser());
-        _commands.AddTypeParser(new RoleTypeParser());
-        _commands.AddTypeParser(new AttachmentTypeParser());
+        Commands.AddTypeParser(new GuildChannelTypeParser<IGuildChannel>());
+        Commands.AddTypeParser(new GuildChannelTypeParser<ITextChannel>());
+        Commands.AddTypeParser(new GuildChannelTypeParser<IVoiceChannel>());
+        Commands.AddTypeParser(new GuildChannelTypeParser<ICategoryChannel>());
+        Commands.AddTypeParser(new GuildChannelTypeParser<IThreadChannel>());
+        Commands.AddTypeParser(new MemberTypeParser());
+        Commands.AddTypeParser(new RoleTypeParser());
+        Commands.AddTypeParser(new AttachmentTypeParser());
 
         return ValueTask.CompletedTask;
     }
@@ -435,7 +440,7 @@ public class SlashCommandService : IHostedService
         var path = interaction.GetFullPath();
         if (!RawCommands.TryGetValue(path, out var command))
         {
-            _logger.LogWarning("Slash command {Path} does not have a valid command mapped to it.", path);
+            Logger.LogWarning("Slash command {Path} does not have a valid command mapped to it.", path);
             return;
         }
 
@@ -445,7 +450,7 @@ public class SlashCommandService : IHostedService
                                ?? parameter.Type;
         if (!_autoCompleteResolvers.TryGetValue(autoCompleteType, out var resolver))
         {
-            _logger.LogWarning("Type {Type} does not have an auto-complete resolver defined for command {Path}.", autoCompleteType, path);
+            Logger.LogWarning("Type {Type} does not have an auto-complete resolver defined for command {Path}.", autoCompleteType, path);
             return;
         }
 
@@ -459,7 +464,7 @@ public class SlashCommandService : IHostedService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An exception occurred attempting to generate or send auto-complete choices for command {Path}.", path);
+            Logger.LogError(ex, "An exception occurred attempting to generate or send auto-complete choices for command {Path}.", path);
         }
     }
 
@@ -468,11 +473,11 @@ public class SlashCommandService : IHostedService
         var path = interaction.GetFullPath();
         if (!RawCommands.TryGetValue(path, out var command))
         {
-            _logger.LogWarning("Slash command {Path} does not have a valid command mapped to it.", path);
+            Logger.LogWarning("Slash command {Path} does not have a valid command mapped to it.", path);
             return;
         }
 
-        var scope = _services.CreateScope();
+        var scope = Services.CreateScope();
         var context = new SlashCommandContext(scope, interaction);
 
         var result = await command.ExecuteAsync(string.Empty, context);
@@ -500,7 +505,7 @@ public class SlashCommandService : IHostedService
 
             if (failedResult is CommandExecutionFailedResult executionFailedResult)
             {
-                _logger.LogError(executionFailedResult.Exception,
+                Logger.LogError(executionFailedResult.Exception,
                     "An unhandled exception occurred while processing step {Step} for command {Path}.",
                     executionFailedResult.CommandExecutionStep, path);
             }
@@ -530,7 +535,7 @@ public class SlashCommandService : IHostedService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "An exception occurred during post-command execution for command {CommandPath}.", e.Context.Command.Name);
+            Logger.LogError(ex, "An exception occurred during post-command execution for command {CommandPath}.", e.Context.Command.Name);
             return ValueTask.CompletedTask;
         }
     }
