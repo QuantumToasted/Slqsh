@@ -3,6 +3,8 @@ Pronounced "squish". No, I will not elaborate or budge on this.
 
 Sqlsh is a drop-in supplement¹ to your [Disqord](https://github.com/Quahu/Disqord) bot of choice. It aims to be a standalone slash command interop library, capable of doing most² things currently possible via Discord's own slash command implementation.
 
+Versioning will be a bit wonky because I simply CBA to implement actions to automate deployment. Bear with me.
+
 # Installation
 TODO
 
