@@ -2,7 +2,7 @@
 
 Pronounced "squish". No, I will not elaborate or budge on this.
 
-Sqlsh is a drop-in supplement¹ to your [Disqord](https://github.com/Quahu/Disqord) bot of choice. It aims to be a standalone slash command interop library, capable of doing most² things currently possible via Discord's own slash command implementation.
+Slqsh is a drop-in supplement¹ to your [Disqord](https://github.com/Quahu/Disqord) bot of choice. It aims to be a standalone slash command interop library, capable of doing most² things currently possible via Discord's own slash command implementation.
 
 Versioning will be a bit wonky because I simply CBA to implement actions to automate deployment. Bear with me.
 
@@ -10,8 +10,8 @@ Versioning will be a bit wonky because I simply CBA to implement actions to auto
 TODO
 
 # Usage
-Simple as. Simply chain `.AddSqlsh()` to your service collection implementation, most likely inside `.ConfigureServices()` in your host of choice.
-Command implementations are nearly identical to Disqord.Bot's own system. All classes and attributes are directly in the `Sqlsh` namespace. Check out the [Sqlsh.Test](../../tree/master/Slqsh.Test/) folder for some sample code with better examples.
+Simple as. Simply chain `.AddSlqsh()` to your service collection implementation, most likely inside `.ConfigureServices()` in your host of choice.
+Command implementations are nearly identical to Disqord.Bot's own system. All classes and attributes are directly in the `Slqsh` namespace. Check out the [Slqsh.Test](../../tree/master/Slqsh.Test/) folder for some sample code with better examples.
 
 ## Notes
 ¹ This library is only intended to be a band-aid, holdover temporary library until Disqord's own slash command implementation is implemented.
