@@ -528,7 +528,9 @@ public class SlashCommandService : IHostedService
 
     private ValueTask OnCommandExecuted(object sender, CommandExecutedEventArgs e)
     {
-        var result = (SlashCommandResult)e.Result;
+        if (e.Result is not SlashCommandResult result)
+            return ValueTask.CompletedTask;
+
         try
         {
             return new ValueTask(result.ExecuteAsync());
