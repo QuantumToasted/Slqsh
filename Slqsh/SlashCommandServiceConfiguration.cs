@@ -22,4 +22,6 @@ public class SlashCommandServiceConfiguration
     public string CommandDataFilePath { get; init; } = "./";
 
     public string CommandDataFileName { get; init; } = "Commands.json";
+
+    public Snowflake DevelopmentGuild { get; init; } = default;
 }

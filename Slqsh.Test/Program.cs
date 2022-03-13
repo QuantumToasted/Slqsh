@@ -1,4 +1,5 @@
-﻿using Disqord.Gateway;
+﻿using Disqord;
+using Disqord.Gateway;
 using Disqord.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,9 +18,12 @@ var host = new HostBuilder()
     {
         logging.AddSimpleConsole();
     })
-    .ConfigureServices(services =>
+    .ConfigureServices((context, services) =>
     {
-        services.AddSlqsh();
+        services.AddSlqsh(new SlashCommandServiceConfiguration()
+        {
+            DevelopmentGuild = context.HostingEnvironment.IsDevelopment() ? Snowflake.Parse(context.Configuration["DevGuild"]) : default 
+        });
     })
     .ConfigureDiscordClient((context, client) =>
     {

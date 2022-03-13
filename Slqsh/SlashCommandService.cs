@@ -236,7 +236,10 @@ public class SlashCommandService : IHostedService
             Logger.LogWarning("{Path} was not found - remote slash command data will now be loaded.",
                 filePath);
 
-            var existingCommands = await Client.FetchGlobalApplicationCommandsAsync(Client.CurrentUser.Id);
+            var existingCommands = Configuration.DevelopmentGuild != default 
+                ? await Client.FetchGuildApplicationCommandsAsync(Client.CurrentUser.Id, Configuration.DevelopmentGuild) 
+                : await Client.FetchGlobalApplicationCommandsAsync(Client.CurrentUser.Id);
+
             var existingSlashCommands = existingCommands.OfType<ISlashCommand>().ToList();
 
             if (existingSlashCommands.Count == 0)
@@ -288,8 +291,9 @@ public class SlashCommandService : IHostedService
             IReadOnlyList<IApplicationCommand> newCommands;
             try
             {
-                newCommands = await Client.SetGlobalApplicationCommandsAsync(Client.CurrentUser.Id,
-                    slashCommands.Select(x => x.ToLocalCommand()));
+                newCommands = Configuration.DevelopmentGuild != default 
+                    ? await Client.SetGuildApplicationCommandsAsync(Client.CurrentUser.Id, Configuration.DevelopmentGuild, slashCommands.Select(x => x.ToLocalCommand())) 
+                    : await Client.SetGlobalApplicationCommandsAsync(Client.CurrentUser.Id, slashCommands.Select(x => x.ToLocalCommand()));
             }
             catch (Exception ex)
             {
@@ -356,7 +360,9 @@ public class SlashCommandService : IHostedService
         {
             try
             {
-                var newCommand = await Client.CreateGlobalApplicationCommandAsync(Client.CurrentUser.Id, command.ToLocalCommand());
+                var newCommand = Configuration.DevelopmentGuild != default 
+                    ? await Client.CreateGuildApplicationCommandAsync(Client.CurrentUser.Id, Configuration.DevelopmentGuild, command.ToLocalCommand()) 
+                    : await Client.CreateGlobalApplicationCommandAsync(Client.CurrentUser.Id, command.ToLocalCommand());
                 command.Id = newCommand.Id;
             }
             catch (Exception ex)
@@ -370,16 +376,28 @@ public class SlashCommandService : IHostedService
         {
             try
             {
-                var modifiedCommand = await Client.ModifyGlobalApplicationCommandAsync(Client.CurrentUser.Id, command.Id, x =>
-                {
-                    x.Description = command.Description;
-                    x.IsEnabledByDefault = command.IsEnabledByDefault;
-                    if (command.Options.Count > 0)
+                var modifiedCommand = Configuration.DevelopmentGuild != default
+                    ? await Client.ModifyGuildApplicationCommandAsync(Client.CurrentUser.Id,
+                        Configuration.DevelopmentGuild, command.Id, x =>
+                        {
+                            x.Description = command.Description;
+                            x.IsEnabledByDefault = command.IsEnabledByDefault;
+                            if (command.Options.Count > 0)
+                            {
+                                x.Options = command.Options.Select(y => y.ToLocalOption())
+                                    .ToList();
+                            }
+                        })
+                    : await Client.ModifyGlobalApplicationCommandAsync(Client.CurrentUser.Id, command.Id, x =>
                     {
-                        x.Options = command.Options.Select(y => y.ToLocalOption())
-                            .ToList();
-                    }
-                });
+                        x.Description = command.Description;
+                        x.IsEnabledByDefault = command.IsEnabledByDefault;
+                        if (command.Options.Count > 0)
+                        {
+                            x.Options = command.Options.Select(y => y.ToLocalOption())
+                                .ToList();
+                        }
+                    });
 
                 command.Id = modifiedCommand.Id;
             }
@@ -394,7 +412,10 @@ public class SlashCommandService : IHostedService
         {
             try
             {
-                await Client.DeleteGlobalApplicationCommandAsync(Client.CurrentUser.Id, command.Id);
+                if (Configuration.DevelopmentGuild != default)
+                    await Client.DeleteGuildApplicationCommandAsync(Client.CurrentUser.Id, Configuration.DevelopmentGuild, command.Id);
+                else
+                    await Client.DeleteGlobalApplicationCommandAsync(Client.CurrentUser.Id, command.Id);
             }
             catch (Exception ex)
             {
