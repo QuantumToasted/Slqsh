@@ -12,7 +12,6 @@ namespace Slqsh;
 public class SlashCommandService : IHostedService
 {
     private readonly Dictionary<Type, AutoCompleteResolver> _autoCompleteResolvers;
-    private bool _firstReady;
 
     public SlashCommandService(IServiceProvider services, SlashCommandServiceConfiguration configuration, 
         DiscordClientBase client, ILogger<SlashCommandService> logger)
@@ -28,7 +27,6 @@ public class SlashCommandService : IHostedService
         });
 
         Commands.CommandExecuted += OnCommandExecuted;
-        Client.Ready += OnReady;
         Client.InteractionReceived += OnInteractionReceived;
     }
     
@@ -85,8 +83,17 @@ public class SlashCommandService : IHostedService
         return ValueTask.CompletedTask;
     }
 
-    public virtual async Task RegisterSlashCommandsAsync()
+    public virtual async Task RegisterSlashCommandsAsync(CancellationToken cancellationToken)
     {
+        var applicationId = Configuration.ApplicationId;
+        if (applicationId == default)
+        {
+            var application = await Client.FetchCurrentApplicationAsync(cancellationToken: cancellationToken);
+            applicationId = application.Id;
+            Logger.LogWarning("You have not set your SlashCommandServiceConfiguration's ApplicationId. To prevent unnecessary REST requests and rate-limits, set it to {ApplicationId}.",
+                applicationId.RawValue);
+        }
+
         // 1. Register auto-complete resolvers
         // 2. Register Qmmands commands
         // 3. Register type parsers
@@ -236,7 +243,7 @@ public class SlashCommandService : IHostedService
             Logger.LogWarning("{Path} was not found - remote slash command data will now be loaded.",
                 filePath);
 
-            var existingCommands = await Client.FetchGlobalApplicationCommandsAsync(Client.CurrentUser.Id);
+            var existingCommands = await Client.FetchGlobalApplicationCommandsAsync(applicationId, cancellationToken: cancellationToken);
             var existingSlashCommands = existingCommands.OfType<ISlashCommand>().ToList();
 
             if (existingSlashCommands.Count == 0)
@@ -252,7 +259,7 @@ public class SlashCommandService : IHostedService
                 try
                 {
                     var json = JsonConvert.SerializeObject(storedCommands);
-                    await File.WriteAllTextAsync(filePath, json);
+                    await File.WriteAllTextAsync(filePath, json, cancellationToken);
                 }
                 catch (Exception ex)
                 {
@@ -267,7 +274,7 @@ public class SlashCommandService : IHostedService
         {
             try
             {
-                var json = await File.ReadAllTextAsync(filePath);
+                var json = await File.ReadAllTextAsync(filePath, cancellationToken);
                 storedCommands = JsonConvert.DeserializeObject<List<JsonSlashCommand>>(json);
             }
             catch (Exception ex)
@@ -288,8 +295,8 @@ public class SlashCommandService : IHostedService
             IReadOnlyList<IApplicationCommand> newCommands;
             try
             {
-                newCommands = await Client.SetGlobalApplicationCommandsAsync(Client.CurrentUser.Id,
-                    slashCommands.Select(x => x.ToLocalCommand()));
+                newCommands = await Client.SetGlobalApplicationCommandsAsync(applicationId,
+                    slashCommands.Select(x => x.ToLocalCommand()), cancellationToken: cancellationToken);
             }
             catch (Exception ex)
             {
@@ -308,7 +315,7 @@ public class SlashCommandService : IHostedService
             try
             {
                 var json = JsonConvert.SerializeObject(slashCommands);
-                await File.WriteAllTextAsync(filePath, json);
+                await File.WriteAllTextAsync(filePath, json, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -356,7 +363,7 @@ public class SlashCommandService : IHostedService
         {
             try
             {
-                var newCommand = await Client.CreateGlobalApplicationCommandAsync(Client.CurrentUser.Id, command.ToLocalCommand());
+                var newCommand = await Client.CreateGlobalApplicationCommandAsync(applicationId, command.ToLocalCommand(), cancellationToken: cancellationToken);
                 command.Id = newCommand.Id;
             }
             catch (Exception ex)
@@ -370,7 +377,7 @@ public class SlashCommandService : IHostedService
         {
             try
             {
-                var modifiedCommand = await Client.ModifyGlobalApplicationCommandAsync(Client.CurrentUser.Id, command.Id, x =>
+                var modifiedCommand = await Client.ModifyGlobalApplicationCommandAsync(applicationId, command.Id, x =>
                 {
                     x.Description = command.Description;
                     x.IsEnabledByDefault = command.IsEnabledByDefault;
@@ -379,7 +386,7 @@ public class SlashCommandService : IHostedService
                         x.Options = command.Options.Select(y => y.ToLocalOption())
                             .ToList();
                     }
-                });
+                }, cancellationToken: cancellationToken);
 
                 command.Id = modifiedCommand.Id;
             }
@@ -394,7 +401,7 @@ public class SlashCommandService : IHostedService
         {
             try
             {
-                await Client.DeleteGlobalApplicationCommandAsync(Client.CurrentUser.Id, command.Id);
+                await Client.DeleteGlobalApplicationCommandAsync(applicationId, command.Id, cancellationToken: cancellationToken);
             }
             catch (Exception ex)
             {
@@ -409,7 +416,7 @@ public class SlashCommandService : IHostedService
             try
             {
                 var json = JsonConvert.SerializeObject(slashCommands);
-                await File.WriteAllTextAsync(filePath, json);
+                await File.WriteAllTextAsync(filePath, json, cancellationToken);
             }
             catch (Exception ex)
             {
@@ -542,15 +549,6 @@ public class SlashCommandService : IHostedService
         }
     }
 
-    private ValueTask OnReady(object sender, ReadyEventArgs e)
-    {
-        if (_firstReady)
-            return ValueTask.CompletedTask;
-
-        _firstReady = true;
-        return new ValueTask(RegisterSlashCommandsAsync());
-    }
-
     private ValueTask OnInteractionReceived(object sender, InteractionReceivedEventArgs e)
     {
         return e.Interaction switch
@@ -561,9 +559,8 @@ public class SlashCommandService : IHostedService
         };
     }
 
-    // Done only so the service can actually get instantiated.
     Task IHostedService.StartAsync(CancellationToken cancellationToken)
-        => Task.CompletedTask;
+        => RegisterSlashCommandsAsync(cancellationToken);
 
     Task IHostedService.StopAsync(CancellationToken cancellationToken)
         => Task.CompletedTask;
