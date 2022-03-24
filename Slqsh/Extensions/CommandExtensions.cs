@@ -19,6 +19,7 @@ internal static class CommandExtensions
     {
         [typeof(string)] = SlashCommandOptionType.String,
         [typeof(IRole)] = SlashCommandOptionType.Role,
+        [typeof(IUser)] = SlashCommandOptionType.User,
         [typeof(IMember)] = SlashCommandOptionType.User,
         [typeof(IGuildChannel)] = SlashCommandOptionType.Channel,
         [typeof(ITextChannel)] = SlashCommandOptionType.Channel,
