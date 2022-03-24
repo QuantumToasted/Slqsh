@@ -39,18 +39,12 @@ internal static class CommandExtensions
         typeof(sbyte),
         typeof(short),
         typeof(ushort),
-        typeof(long),
-        typeof(ulong),
-        typeof(Snowflake),
         typeof(int?),
         typeof(uint?),
         typeof(byte?),
         typeof(sbyte?),
         typeof(short?),
         typeof(ushort?),
-        typeof(long?),
-        typeof(ulong?),
-        typeof(Snowflake?)
     };
 
     public static readonly Type[] DefaultNumberTypes =
