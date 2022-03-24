@@ -18,7 +18,7 @@ internal static class CommandExtensions
     public static readonly Dictionary<Type, SlashCommandOptionType> DefaultTypeMap = new()
     {
         [typeof(string)] = SlashCommandOptionType.String,
-        [typeof(IRole)] = SlashCommandOptionType.String,
+        [typeof(IRole)] = SlashCommandOptionType.Role,
         [typeof(IMember)] = SlashCommandOptionType.User,
         [typeof(IGuildChannel)] = SlashCommandOptionType.Channel,
         [typeof(ITextChannel)] = SlashCommandOptionType.Channel,

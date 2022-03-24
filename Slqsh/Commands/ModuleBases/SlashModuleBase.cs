@@ -30,6 +30,9 @@ public abstract class SlashModuleBase<TContext> : ModuleBase<TContext>
     protected SlashCommandResponseResult Response(string text, bool isEphemeral = false)
         => Response(new LocalInteractionMessageResponse().WithContent(text).WithIsEphemeral(isEphemeral));
 
+    protected SlashCommandResponseResult Response(LocalEmbed embed, bool isEphemeral = false)
+        => Response(new LocalInteractionMessageResponse().WithEmbeds(embed).WithIsEphemeral(isEphemeral));
+
     protected SlashCommandResponseResult Response(string text, LocalEmbed embed, bool isEphemeral = false)
         => Response(new LocalInteractionMessageResponse().WithContent(text).WithEmbeds(embed).WithIsEphemeral(isEphemeral));
 
@@ -50,6 +53,9 @@ public abstract class SlashModuleBase<TContext> : ModuleBase<TContext>
 
     protected SlashCommandFollowupResult Followup(string text, bool isEphemeral = false)
         => Followup(new LocalInteractionFollowup().WithContent(text).WithIsEphemeral(isEphemeral));
+
+    protected SlashCommandFollowupResult Followup(LocalEmbed embed, bool isEphemeral = false)
+        => Followup(new LocalInteractionFollowup().WithEmbeds(embed).WithIsEphemeral(isEphemeral));
 
     protected SlashCommandFollowupResult Followup(string text, LocalEmbed embed, bool isEphemeral = false)
         => Followup(new LocalInteractionFollowup().WithContent(text).WithEmbeds(embed).WithIsEphemeral(isEphemeral));
