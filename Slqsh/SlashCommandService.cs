@@ -38,9 +38,9 @@ public class SlashCommandService : IHostedService
 
     protected ILogger Logger { get; }
 
-    protected CommandService Commands { get; }
+    protected CommandService Commands { get; protected set; }
 
-    public IReadOnlyDictionary<string, Command> RawCommands { get; private set; }
+    public IReadOnlyDictionary<string, Command> RawCommands { get; protected set; }
 
     public virtual ValueTask RegisterInternalCommandsAsync()
     {
