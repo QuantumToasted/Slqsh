@@ -80,7 +80,10 @@ public class SlashCommandService : IHostedService
 
                     foreach (var command in CommandUtilities.EnumerateAllCommands(module))
                     {
-                        if (!SlashCommandValidationRegex.IsMatch(command.Name))
+                        if (command.Aliases.Count > 1)
+                            throw new Exception($"Command `{command.Name}` in module `{module.Name}` must not have more than one alias.");
+
+                        if (!SlashCommandValidationRegex.IsMatch(command.Aliases[0]))
                             throw new Exception($"Command `{command.Name}` in module `{module.Name}`'s name must pass Regex validation ({SlashCommandValidationRegex}).");
 
                         if (command.Name.Any(char.IsUpper))
