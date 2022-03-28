@@ -568,19 +568,18 @@ public class SlashCommandService : IHostedService
         };
     }
 
-    private ValueTask OnCommandExecuted(object sender, CommandExecutedEventArgs e)
+    private async ValueTask OnCommandExecuted(object sender, CommandExecutedEventArgs e)
     {
         if (e.Result is not SlashCommandResult result)
-            return ValueTask.CompletedTask;
+            return;
 
         try
         {
-            return new ValueTask(result.ExecuteAsync());
+            await result.ExecuteAsync();
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "An exception occurred during post-command execution for command {CommandPath}.", e.Context.Command.Name);
-            return ValueTask.CompletedTask;
         }
     }
 
