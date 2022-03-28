@@ -518,7 +518,9 @@ public class SlashCommandService : IHostedService
         }
 
         var scope = Services.CreateScope();
-        var context = new SlashCommandContext(scope, interaction);
+        var context = interaction.GuildId.HasValue
+            ? new SlashGuildCommandContext(scope, interaction)
+            : new SlashCommandContext(scope, interaction);
 
         var result = await command.ExecuteAsync(string.Empty, context);
 

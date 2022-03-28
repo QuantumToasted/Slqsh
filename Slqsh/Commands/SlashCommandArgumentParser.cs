@@ -8,7 +8,9 @@ public sealed class SlashCommandArgumentParser : IArgumentParser
 
     public ValueTask<ArgumentParserResult> ParseAsync(CommandContext _)
     {
-        var context = (SlashCommandContext)_;
+        if (_ is not SlashCommandContext context)
+            throw new InvalidOperationException($"The {GetType().Name} only accepts a {nameof(SlashCommandContext)}.");
+
         var command = context.Command;
 
         var arguments = new Dictionary<Parameter, object>(command.Parameters.Count);

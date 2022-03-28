@@ -8,7 +8,9 @@ public abstract class SlashCommandParameterCheckAttribute : ParameterCheckAttrib
 
     public sealed override ValueTask<CheckResult> CheckAsync(object argument, CommandContext _)
     {
-        var context = (SlashCommandContext)_;
+        if (_ is not SlashCommandContext context)
+            throw new InvalidOperationException($"The {GetType().Name} only accepts a {nameof(SlashCommandContext)}.");
+
         return CheckAsync(argument, context);
     }
 }
