@@ -31,5 +31,4 @@ public sealed class SlashCommandArgumentParser : IArgumentParser
 
         return new ValueTask<ArgumentParserResult>(new DefaultArgumentParserResult(command, arguments));
     }
-
 }

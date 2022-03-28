@@ -6,11 +6,13 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Qmmands;
+using System.Text.RegularExpressions;
 
 namespace Slqsh;
 
 public class SlashCommandService : IHostedService
 {
+    private static readonly Regex SlashCommandValidationRegex = new(@"^[\w-]{1,32}$", RegexOptions.Compiled);
     private readonly Dictionary<Type, AutoCompleteResolver> _autoCompleteResolvers;
 
     public SlashCommandService(IServiceProvider services, SlashCommandServiceConfiguration configuration, 
@@ -52,6 +54,21 @@ public class SlashCommandService : IHostedService
 
                 foreach (var module in modules)
                 {
+                    if (module.Aliases.Count > 0)
+                    {
+                        if (string.IsNullOrWhiteSpace(module.Description))
+                            throw new Exception($"Module `{module.Name}` must have a description set if it is marked with a GroupAttribute.");
+
+                        foreach (var alias in module.Aliases)
+                        {
+                            if (!SlashCommandValidationRegex.IsMatch(alias))
+                                throw new Exception($"Module `{module.Name}` has a GroupAttribute/alias must pass Regex validation ({SlashCommandValidationRegex}).");
+
+                            if (alias.Any(char.IsUpper))
+                                throw new Exception($"Module `{module.Name}` has a GroupAttribute/alias must not contain uppercase characters.");
+                        }
+                    }
+
                     if (string.IsNullOrWhiteSpace(module.Description) && module.Aliases.Count > 0)
                         throw new Exception($"Module `{module.Name}` must have a description set if it is marked with a GroupAttribute.");
 
@@ -63,11 +80,23 @@ public class SlashCommandService : IHostedService
 
                     foreach (var command in CommandUtilities.EnumerateAllCommands(module))
                     {
+                        if (!SlashCommandValidationRegex.IsMatch(command.Name))
+                            throw new Exception($"Command `{command.Name}` in module `{module.Name}`'s name must pass Regex validation ({SlashCommandValidationRegex}).");
+
+                        if (command.Name.Any(char.IsUpper))
+                            throw new Exception($"Command `{command.Name}` in module `{module.Name}`'s name must not contain uppercase characters.");
+
                         if (string.IsNullOrWhiteSpace(command.Description))
                             throw new FormatException($"Command `{command.Name}` in module `{module.Name}` must have a description set.");
 
                         foreach (var parameter in command.Parameters)
                         {
+                            if (!SlashCommandValidationRegex.IsMatch(parameter.Name))
+                                throw new Exception($"Parameter `{parameter.Name}` in command `{command.Name}` in module `{module.Name}`'s name must pass Regex validation ({SlashCommandValidationRegex}).");
+
+                            if (parameter.Name.Any(char.IsUpper))
+                                throw new Exception($"Parameter `{parameter.Name}` in command `{command.Name}` in module `{module.Name}`'s name must not contain uppercase characters.");
+
                             if (string.IsNullOrWhiteSpace(parameter.Description))
                                 throw new Exception($"Parameter `{parameter.Name}` in command `{command.Name}` in module `{module.Name}` must have a description set.");
                         }
