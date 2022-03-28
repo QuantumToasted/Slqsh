@@ -13,7 +13,7 @@ Add `https://www.myget.org/F/quantumtoast/api/v3/index.json` to your NuGet packa
 
 # Usage
 Simple as. Simply chain `.AddSlqsh()` to your service collection implementation, most likely inside `.ConfigureServices()` in your host of choice.
-Command implementations are nearly identical to Disqord.Bot's own system. All classes and attributes are directly in the `Slqsh` namespace. Check out the [Slqsh.Test](../../tree/master/Slqsh.Test/) folder for some sample code with better examples.
+Command implementations are nearly identical to Disqord.Bot's own system. All classes and attributes are directly in the `Slqsh` namespace. ~~Check out the [Slqsh.Test](../../tree/master/Slqsh.Test/) folder for some sample code with better examples.~~ Check out the new [Wiki](../../wiki) for more detailed usages and help with configuring and using the library!
 
 ## Notes
 ¹ This library is only intended to be a band-aid, holdover temporary library until Disqord's own slash command implementation is implemented.
