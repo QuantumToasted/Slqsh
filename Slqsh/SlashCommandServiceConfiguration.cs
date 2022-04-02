@@ -24,4 +24,6 @@ public class SlashCommandServiceConfiguration
     public string CommandDataFileName { get; init; } = "Commands.json";
 
     public Snowflake ApplicationId { get; init; } = default;
+
+    public bool IgnoreSubmoduleWarnings { get; init; } = false;
 }

@@ -185,9 +185,9 @@ public class SlashCommandService : IHostedService
 
                 foreach (var command in module.Commands)
                 {
-                    var path = command.Name.Split(' ');
+                    var commandName = command.Aliases.Single();
                     var option = new LocalSlashCommandOption()
-                        .WithName(path[1])
+                        .WithName(commandName)
                         .WithDescription(command.Description)
                         .WithType(SlashCommandOptionType.Subcommand);
 
@@ -210,9 +210,9 @@ public class SlashCommandService : IHostedService
 
                     foreach (var subCommand in subModule.Commands)
                     {
-                        var path = subCommand.Name.Split(' ');
+                        var subCommandName = subCommand.Aliases.Single();
                         var subOption = new LocalSlashCommandOption()
-                            .WithName(path[2])
+                            .WithName(subCommandName)
                             .WithDescription(subCommand.Description)
                             .WithType(SlashCommandOptionType.Subcommand);
 
@@ -245,13 +245,14 @@ public class SlashCommandService : IHostedService
                     slashCommands.Add(new JsonSlashCommand(slashCommand));
                 }
 
-                if (module.Submodules.Count > 0)
+                if (module.Submodules.Count > 0 && !Configuration.IgnoreSubmoduleWarnings)
                 {
-                    Logger.LogError("Submodule {Submodule} was found in un-grouped module {Module}!",
+                    Logger.LogWarning(
+                        "Submodule {Submodule} was found in un-grouped module {Module}. If this was intended, you can ignore this warning or set {ConfigSetting} to {Value} in your configuration.",
                         module.Submodules[0].Name,
-                        module.Name);
-
-                    return;
+                        module.Name,
+                        nameof(Configuration.IgnoreSubmoduleWarnings),
+                        true);
                 }
             }
         }
