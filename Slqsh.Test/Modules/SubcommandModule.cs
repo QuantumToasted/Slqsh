@@ -1,6 +1,6 @@
 ﻿using Qmmands;
 
-namespace Slqsh.Test.Modules;
+namespace Slqsh.Test;
 
 [Group("build")]
 [Description("Build some things.")]

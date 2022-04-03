@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Slqsh;
+using Slqsh.Test;
 
 // TODO: Write a more complete test suite, including parameters/options, more sub-commands, auto-completion, etc.
 
@@ -17,9 +18,12 @@ var host = new HostBuilder()
     {
         logging.AddSimpleConsole();
     })
-    .ConfigureServices(services =>
+    .ConfigureServices((context, services) =>
     {
-        services.AddSlqsh();
+        services.AddSlqsh<ExampleSlashCommandService>(new SlashCommandServiceConfiguration
+        {
+            ApplicationId = context.Configuration.GetValue<ulong>("APPLICATION_ID") // Yes, I know IDs are not sensitive information.
+        });
     })
     .ConfigureDiscordClient((context, client) =>
     {

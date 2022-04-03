@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <Folder Include="Modules\" />
+    <Folder Include="Common\" />
   </ItemGroup>
 
 </Project>
