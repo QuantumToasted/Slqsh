@@ -20,12 +20,20 @@ public sealed class SlashCommandMenuResult : SlashCommandResult
 
     public override async Task ExecuteAsync()
     {
-        await Context.Response().DeferAsync(isEphemeral: IsEphemeral);
+        // This is only necessary as Disqord's DefaultMenu and PagedView are wholly intended for regular text command bots and break with interactions.
+        if (Menu is DefaultMenu)
+            throw new NotSupportedException("DefaultMenu and its implementations are not designed for interactions. Utilize SlashDefaultMenu instead.");
 
-        if (Menu.View is PagedView view)
+        if (Menu.View is PagedView)
+            throw new NotSupportedException("PagedView and its implementations are not designed for interactions. Utilize SlashPagedView instead.");
+
+        if (Menu is SlashDefaultMenu)
         {
-            await view.UpdateAsync();
+            await Context.Client.StartMenuAsync(Context.ChannelId, Menu);
+            return;
         }
+
+        await Context.Response().DeferAsync(isEphemeral: IsEphemeral);
 
         var localMessage = Menu.View.ToLocalMessage();
 
@@ -36,9 +44,9 @@ public sealed class SlashCommandMenuResult : SlashCommandResult
             .WithAttachments(localMessage.Attachments)
             .WithIsEphemeral(IsEphemeral));
 
-        // Need some way to set the message ID of the menu before it is sent, otherwise a new non-slash-command message will be sent.
-        var messageId = typeof(MenuBase).GetProperty("MessageId", BindingFlags.Public | BindingFlags.Instance);
-        messageId!.SetValue(Menu, message.Id);
+        // As we already have an instance of the menu, we need to set the message ID before sending it
+        var messageIdProperty = typeof(MenuBase).GetProperty("MessageId", BindingFlags.Public | BindingFlags.Instance);
+        messageIdProperty!.SetValue(Menu, message.Id);
 
         await Context.Client.StartMenuAsync(Context.ChannelId, Menu);
     }

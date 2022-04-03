@@ -1,7 +1,7 @@
 ﻿namespace Slqsh;
 
 [AttributeUsage(AttributeTargets.Parameter)]
-public sealed class AutoCompleteAttribute : Attribute
+public sealed class AutoCompleteAttribute : ParseFromStringAttribute
 {
     public AutoCompleteAttribute()
         : this(default)

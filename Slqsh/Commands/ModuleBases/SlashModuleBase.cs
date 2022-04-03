@@ -43,13 +43,13 @@ public abstract class SlashModuleBase<TContext> : ModuleBase<TContext>
         => new(Context, menu, isEphemeral);
 
     protected SlashCommandMenuResult View(ViewBase view, bool isEphemeral = false)
-        => Menu(new DefaultMenu(view) { AuthorId = Context.Author.Id }, isEphemeral);
-
-    protected SlashCommandMenuResult Pages(IEnumerable<Page> pages, bool isEphemeral = false)
-        => View(new PagedView(new ListPageProvider(pages)), isEphemeral);
+        => Menu(new SlashDefaultMenu(view, Context.Interaction, isEphemeral) { AuthorId = Context.Author.Id }, isEphemeral);
 
     protected SlashCommandMenuResult Pages(PageProvider pageProvider, bool isEphemeral = false)
-        => View(new PagedView(pageProvider), isEphemeral);
+        => View(new SlashPagedView(pageProvider), isEphemeral);
+
+    protected SlashCommandMenuResult Pages(IEnumerable<Page> pages, bool isEphemeral = false)
+        => Pages(new ListPageProvider(pages), isEphemeral);
 
     protected SlashCommandFollowupResult Followup(string text, bool isEphemeral = false)
         => Followup(new LocalInteractionFollowup().WithContent(text).WithIsEphemeral(isEphemeral));

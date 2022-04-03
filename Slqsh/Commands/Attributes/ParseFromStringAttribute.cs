@@ -1,5 +1,5 @@
 ﻿namespace Slqsh;
 
 [AttributeUsage(AttributeTargets.Parameter)]
-public sealed class ParseFromStringAttribute : Attribute
+public class ParseFromStringAttribute : Attribute
 { }
