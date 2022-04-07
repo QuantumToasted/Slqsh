@@ -410,7 +410,8 @@ public class SlashCommandService : IHostedService
         {
             try
             {
-                var modifiedCommand = await Client.ModifyGlobalApplicationCommandAsync(applicationId, command.Id, x =>
+                // TODO: Round 1 patch - stop setting IDs after modifying, they don't change.
+                /*var modifiedCommand = */await Client.ModifyGlobalApplicationCommandAsync(applicationId, command.Id, x =>
                 {
                     x.Description = command.Description;
                     x.IsEnabledByDefault = command.IsEnabledByDefault;
@@ -421,7 +422,7 @@ public class SlashCommandService : IHostedService
                     }
                 }, cancellationToken: cancellationToken);
 
-                command.Id = modifiedCommand.Id;
+                //command.Id = modifiedCommand.Id;
             }
             catch (Exception ex)
             {
