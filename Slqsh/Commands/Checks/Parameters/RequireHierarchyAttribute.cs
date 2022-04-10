@@ -27,6 +27,10 @@ public sealed class RequireHierarchyAttribute : SlashGuildCommandParameterCheckA
 
     public override ValueTask<CheckResult> CheckAsync(object argument, SlashGuildCommandContext context)
     {
+        // Short circuit for users who aren't members - this means a user ID of a user not in the server was supplied.
+        if (argument is IUser and not IMember)
+            return Success();
+
         if (HierarchyType.HasFlag(HierarchyType.Author))
         {
             var (placeholder, pronoun) = CheckHierarchy(context.Author, argument);
