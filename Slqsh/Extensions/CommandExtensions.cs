@@ -243,10 +243,9 @@ internal static class CommandExtensions
             optionType = SlashCommandOptionType.String;
         }
 
-        return optionType
-               ?? throw new ArgumentException(
-                   $"The type {parameter.Type.FullName} has not been defined to match an option type.",
-                   nameof(parameter));
+        return optionType ?? throw new ArgumentException(
+            $"The type {parameter.Type.FullName} has not been defined to match an option type.",
+            nameof(parameter));
 
         static SlashCommandOptionType? GetOptionType(Type type, SlashCommandServiceConfiguration configuration)
         {

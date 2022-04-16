@@ -3,7 +3,9 @@ using Newtonsoft.Json;
 
 namespace Slqsh;
 
+#pragma warning disable CS0659
 public sealed class JsonSlashCommand
+#pragma warning restore CS0659
 {
     private JsonSlashCommand()
     { }
