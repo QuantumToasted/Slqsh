@@ -482,6 +482,7 @@ public class SlashCommandService : IHostedService
         Commands.AddTypeParser(new GuildChannelTypeParser<IVoiceChannel>());
         Commands.AddTypeParser(new GuildChannelTypeParser<ICategoryChannel>());
         Commands.AddTypeParser(new GuildChannelTypeParser<IThreadChannel>());
+        Commands.AddTypeParser(new GuildChannelTypeParser<IMessageGuildChannel>());
         Commands.AddTypeParser(new UserTypeParser<IUser>());
         Commands.AddTypeParser(new UserTypeParser<IMember>());
         Commands.AddTypeParser(new RoleTypeParser());

@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
-	<VersionPrefix>0.7.0</VersionPrefix>
+	<VersionPrefix>0.7.1</VersionPrefix>
 	<Description>Slqsh is a drop-in supplement to your Disqord bot of choice. It aims to be a standalone slash command interop library, capable of doing most things currently possible via Discord's own slash command implementation.</Description>
 	<PackageProjectUrl>https://github.com/QuantumToasted/Slqsh</PackageProjectUrl>
 	<Copyright>https://github.com/QuantumToasted/Slqsh/blob/master/LICENSE</Copyright>
