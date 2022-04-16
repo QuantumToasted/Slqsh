@@ -3,7 +3,9 @@ using Newtonsoft.Json;
 
 namespace Slqsh;
 
+#pragma warning disable CS0659
 public sealed class JsonSlashCommandOption
+#pragma warning restore CS0659
 {
     private JsonSlashCommandOption()
     { }
@@ -55,6 +57,7 @@ public sealed class JsonSlashCommandOption
 
     [JsonProperty("channelTypes")]
     public IReadOnlyList<ChannelType> ChannelTypes { get; private set; }
+
 
     public override bool Equals(object obj)
     {

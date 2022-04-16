@@ -57,51 +57,61 @@ public class SlashCommandService : IHostedService
                     if (module.Aliases.Count > 0)
                     {
                         if (string.IsNullOrWhiteSpace(module.Description))
-                            throw new Exception($"Module `{module.Name}` must have a description set if it is marked with a GroupAttribute.");
+                            throw new FormatException($"Module `{module}` must have a description set if it is marked with a GroupAttribute.");
+
+                        if (module.Description.Length > Discord.Limits.ApplicationCommands.MaxDescriptionLength)
+                            throw new FormatException($"Module `{module}`'s description length ({module.Description.Length}) is greater " +
+                                                $"than the maximum allowed ({Discord.Limits.ApplicationCommands.MaxDescriptionLength}).");
 
                         foreach (var alias in module.Aliases)
                         {
                             if (!SlashCommandValidationRegex.IsMatch(alias))
-                                throw new Exception($"Module `{module.Name}` has a GroupAttribute/alias must pass Regex validation ({SlashCommandValidationRegex}).");
+                                throw new FormatException($"Module `{module}` has a GroupAttribute/alias must pass Regex validation ({SlashCommandValidationRegex}).");
 
                             if (alias.Any(char.IsUpper))
-                                throw new Exception($"Module `{module.Name}` has a GroupAttribute/alias must not contain uppercase characters.");
+                                throw new FormatException($"Module `{module}` has a GroupAttribute/alias must not contain uppercase characters.");
                         }
                     }
-
-                    if (string.IsNullOrWhiteSpace(module.Description) && module.Aliases.Count > 0)
-                        throw new Exception($"Module `{module.Name}` must have a description set if it is marked with a GroupAttribute.");
 
                     foreach (var subModule in CommandUtilities.EnumerateAllSubmodules(module))
                     {
                         if (string.IsNullOrWhiteSpace(subModule.Description) && subModule.Aliases.Count > 0)
-                            throw new Exception($"Submodule `{subModule.Name}` in module `{module.Name}` must have a description set if it is marked with a GroupAttribute.");
+                            throw new FormatException($"Submodule `{subModule}` in module `{module}` must have a description set if it is marked with a GroupAttribute.");
                     }
 
                     foreach (var command in CommandUtilities.EnumerateAllCommands(module))
                     {
                         if (command.Aliases.Count > 1)
-                            throw new Exception($"Command `{command.Name}` in module `{module.Name}` must not have more than one alias.");
+                            throw new FormatException($"Command `{command}` in module `{module}` must not have more than one alias.");
 
                         if (!SlashCommandValidationRegex.IsMatch(command.Aliases[0]))
-                            throw new Exception($"Command `{command.Name}` in module `{module.Name}`'s name must pass Regex validation ({SlashCommandValidationRegex}).");
+                            throw new FormatException($"Command `{command}` in module `{module}`'s name must pass Regex validation ({SlashCommandValidationRegex}).");
 
                         if (command.Name.Any(char.IsUpper))
-                            throw new Exception($"Command `{command.Name}` in module `{module.Name}`'s name must not contain uppercase characters.");
+                            throw new FormatException($"Command `{command}` in module `{module}`'s name must not contain uppercase characters.");
 
                         if (string.IsNullOrWhiteSpace(command.Description))
-                            throw new FormatException($"Command `{command.Name}` in module `{module.Name}` must have a description set.");
+                            throw new FormatException($"Command `{command}` in module `{module}` must have a description set.");
+
+                        if (command.Description.Length > Discord.Limits.ApplicationCommands.MaxDescriptionLength)
+                            throw new FormatException($"Command `{command}` in module `{module}`'s description length ({command.Description.Length}) is greater " +
+                                                      $"than the maximum allowed ({Discord.Limits.ApplicationCommands.MaxDescriptionLength}).");
 
                         foreach (var parameter in command.Parameters)
                         {
                             if (!SlashCommandValidationRegex.IsMatch(parameter.Name))
-                                throw new Exception($"Parameter `{parameter.Name}` in command `{command.Name}` in module `{module.Name}`'s name must pass Regex validation ({SlashCommandValidationRegex}).");
+                                throw new FormatException($"Parameter `{parameter}` in command `{command}` in module `{module}`'s name must pass Regex validation ({SlashCommandValidationRegex}).");
 
                             if (parameter.Name.Any(char.IsUpper))
-                                throw new Exception($"Parameter `{parameter.Name}` in command `{command.Name}` in module `{module.Name}`'s name must not contain uppercase characters.");
+                                throw new FormatException($"Parameter `{parameter}` in command `{command}` in module `{module}`'s name must not contain uppercase characters.");
 
                             if (string.IsNullOrWhiteSpace(parameter.Description))
-                                throw new Exception($"Parameter `{parameter.Name}` in command `{command.Name}` in module `{module.Name}` must have a description set.");
+                                throw new FormatException($"Parameter `{parameter.Name}` in command `{command.Name}` in module `{module.Name}` must have a description set.");
+
+                            if (parameter.Description.Length > Discord.Limits.ApplicationCommands.Options.MaxDescriptionLength)
+                                throw new FormatException($"Parameter `{parameter}` in command `{command}` in module `{module}`'s description " +
+                                                          $"length ({parameter.Description.Length}) is greater than the maximum allowed " +
+                                                          $"({Discord.Limits.ApplicationCommands.Options.MaxDescriptionLength}).");
                         }
                     }
                 }
@@ -396,7 +406,8 @@ public class SlashCommandService : IHostedService
         {
             try
             {
-                var newCommand = await Client.CreateGlobalApplicationCommandAsync(applicationId, command.ToLocalCommand(), cancellationToken: cancellationToken);
+                var newCommand = await Client.CreateGlobalApplicationCommandAsync(applicationId,
+                    command.ToLocalCommand(), cancellationToken: cancellationToken);
                 command.Id = newCommand.Id;
             }
             catch (Exception ex)
@@ -404,6 +415,8 @@ public class SlashCommandService : IHostedService
                 Logger.LogError(ex, "Unable to add global slash command {Name}.", command.Name);
                 return;
             }
+
+            Library.Debug.DumpJson = false;
         }
 
         foreach (var command in commandsToModify)

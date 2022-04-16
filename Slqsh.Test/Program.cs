@@ -32,17 +32,19 @@ var host = new HostBuilder()
     })
     .Build();
 
+var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("SlqshTestBot");
+
 try
 {
     host.Run();
 }
 catch (Exception ex)
 {
-    var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("SlqshTestBot");
     logger.LogCritical(ex, "An unhandled top level exception was thrown. Hosting has stopped.");
+    Console.ReadLine();
+    Environment.Exit(-1);
 }
 finally
 {
     host.Dispose();
-    Environment.Exit(-1);
 }
