@@ -38,7 +38,13 @@ public sealed class SlashCommandMenuResult : SlashCommandResult
 
         if (Menu is SlashDefaultMenu)
         {
-            await Context.Client.StartMenuAsync(Context.ChannelId, Menu);
+            if (!runMenu)
+            {
+                await Context.Client.StartMenuAsync(Context.ChannelId, Menu);
+                return;
+            }
+
+            await Context.Client.RunMenuAsync(Context.ChannelId, Menu);
             return;
         }
 
