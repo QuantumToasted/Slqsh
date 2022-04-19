@@ -1,4 +1,6 @@
-﻿using Disqord;
+﻿using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using Disqord;
 
 namespace Slqsh;
 
@@ -13,7 +15,9 @@ public class SlashCommandFollowupResult : SlashCommandResult
     public LocalInteractionFollowup Followup { get; }
 
     public override Task ExecuteAsync()
-    {
-        return Context.Followup().SendAsync(Followup);
-    }
+        => Context.Followup().SendAsync(Followup);
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public new virtual TaskAwaiter<IUserMessage> GetAwaiter()
+        => Context.Followup().SendAsync(Followup).GetAwaiter();
 }

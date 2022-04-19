@@ -1,4 +1,6 @@
-﻿using System.Reflection;
+﻿using System.ComponentModel;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using Disqord;
 using Disqord.Extensions.Interactivity.Menus;
 using Disqord.Extensions.Interactivity.Menus.Paged;
@@ -18,7 +20,14 @@ public sealed class SlashCommandMenuResult : SlashCommandResult
 
     public bool IsEphemeral { get; }
 
-    public override async Task ExecuteAsync()
+    public override Task ExecuteAsync()
+        => SendMenuAsync();
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public override TaskAwaiter GetAwaiter()
+        => SendMenuAsync(runMenu: true).GetAwaiter();
+
+    private async Task SendMenuAsync(bool runMenu = false)
     {
         // This is only necessary as Disqord's DefaultMenu and PagedView are wholly intended for regular text command bots and break with interactions.
         if (Menu is DefaultMenu)
@@ -48,6 +57,12 @@ public sealed class SlashCommandMenuResult : SlashCommandResult
         var messageIdProperty = typeof(MenuBase).GetProperty("MessageId", BindingFlags.Public | BindingFlags.Instance);
         messageIdProperty!.SetValue(Menu, message.Id);
 
-        await Context.Client.StartMenuAsync(Context.ChannelId, Menu);
+        if (!runMenu)
+        {
+            await Context.Client.StartMenuAsync(Context.ChannelId, Menu);
+            return;
+        }
+
+        await Context.Client.RunMenuAsync(Context.ChannelId, Menu);
     }
 }
