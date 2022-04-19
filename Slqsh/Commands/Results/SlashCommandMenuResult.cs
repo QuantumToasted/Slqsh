@@ -42,7 +42,8 @@ public sealed class SlashCommandMenuResult : SlashCommandResult
             return;
         }
 
-        await Context.Response().DeferAsync(isEphemeral: IsEphemeral);
+        if (!Context.Response().HasResponded)
+            await Context.Response().DeferAsync(isEphemeral: IsEphemeral);
 
         var localMessage = Menu.View.ToLocalMessage();
 
