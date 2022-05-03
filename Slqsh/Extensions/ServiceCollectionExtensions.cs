@@ -14,6 +14,7 @@ public static class ServiceCollectionExtensions
         configuration ??= SlashCommandServiceConfiguration.Default;
         services.AddSingleton(configuration);
         services.AddSingleton<TService>();
+        services.AddSingleton<SlashCommandService, TService>(x => x.GetService<TService>());
         services.AddSingleton<IHostedService, TService>(x => x.GetService<TService>());
 
         foreach (var type in configuration.AutoCompleteResolverAssemblies.SelectMany(x => x.GetTypes())
