@@ -32,7 +32,8 @@ public class SlashDefaultMenu : MenuBase
         if (messageId != default)
             return messageId;
 
-        await Interaction.Response().DeferAsync(isEphemeral: IsEphemeral, cancellationToken: cancellationToken);
+        if (!Interaction.Response().HasResponded)
+            await Interaction.Response().DeferAsync(isEphemeral: IsEphemeral, cancellationToken: cancellationToken);
 
         var localMessage = View.ToLocalMessage();
 

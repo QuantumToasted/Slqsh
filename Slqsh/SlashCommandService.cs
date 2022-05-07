@@ -1,4 +1,5 @@
-﻿using Disqord;
+﻿using System.Reflection;
+using Disqord;
 using Disqord.Gateway;
 using Disqord.Rest;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,7 +14,7 @@ namespace Slqsh;
 public class SlashCommandService : IHostedService
 {
     private static readonly Regex SlashCommandValidationRegex = new(@"^[\w-]{1,32}$", RegexOptions.Compiled);
-    private readonly Dictionary<Type, AutoCompleteResolver> _autoCompleteResolvers;
+    private readonly Dictionary<Type, AutoCompleteResolver> _autoCompleteResolvers = new();
 
     public SlashCommandService(IServiceProvider services, SlashCommandServiceConfiguration configuration, 
         DiscordClientBase client, ILogger<SlashCommandService> logger)
@@ -21,7 +22,6 @@ public class SlashCommandService : IHostedService
         Services = services;
         Client = client;
         Configuration = configuration;
-        _autoCompleteResolvers = new();
         Logger = logger;
         Commands = new CommandService(new CommandServiceConfiguration
         {
@@ -29,9 +29,12 @@ public class SlashCommandService : IHostedService
         });
 
         Commands.CommandExecuted += OnCommandExecuted;
+        Commands.CommandExecutionFailed += OnCommandExecutionFailed;
         Client.InteractionReceived += OnInteractionReceived;
     }
-    
+
+    internal Dictionary<string, SlashCommandModalResult> ModalResponses { get; } = new();
+
     protected IServiceProvider Services { get; }
 
     protected DiscordClientBase Client { get; }
@@ -44,13 +47,19 @@ public class SlashCommandService : IHostedService
 
     public IReadOnlyDictionary<string, Command> RawCommands { get; protected set; }
 
+    public virtual bool FilterModule(TypeInfo type)
+        => true;
+
+    public virtual void BuildModule(ModuleBuilder module) 
+    { }
+
     public virtual ValueTask RegisterInternalCommandsAsync()
     {
         foreach (var assembly in Configuration.SlashCommandModuleAssemblies)
         {
             try
             {
-                var modules = Commands.AddModules(assembly);
+                var modules = Commands.AddModules(assembly, FilterModule, BuildModule);
 
                 foreach (var module in modules)
                 {
@@ -570,6 +579,21 @@ public class SlashCommandService : IHostedService
         }
     }
 
+    
+    public virtual ValueTask HandleModalSubmitAsync(IModalSubmitInteraction interaction)
+    {
+        if (!ModalResponses.Remove(interaction.CustomId, out var modal))
+        {
+            Logger.LogWarning("A modal response was unable to be found with the ID {ID}.", interaction.CustomId);
+            return ValueTask.CompletedTask;
+        }
+
+        modal.SubmittedModal = interaction;
+        modal.Cts.Cancel();
+        return new(interaction.Response().SendMessageAsync(new LocalInteractionMessageResponse().WithContent("test")));
+    }
+    
+
     // Borrowed from Disqord.Bot, very barebones
     public virtual string FormatFailureReason(SlashCommandContext context, FailedResult result)
     {
@@ -605,8 +629,36 @@ public class SlashCommandService : IHostedService
         {
             IAutoCompleteInteraction autoCompleteInteraction => HandleAutoCompleteAsync(autoCompleteInteraction),
             ISlashCommandInteraction slashCommandInteraction => HandleSlashCommandAsync(slashCommandInteraction),
+            IModalSubmitInteraction modalSubmitInteraction => HandleModalSubmitAsync(modalSubmitInteraction),
             _ => ValueTask.CompletedTask
         };
+    }
+
+    private async ValueTask OnCommandExecutionFailed(object sender, CommandExecutionFailedEventArgs e)
+    {
+        Logger.LogError(e.Result.Exception,
+            "An unhandled exception occurred while processing step {Step} for command {Path}.",
+            e.Result.CommandExecutionStep, e.Context.Path);
+
+        var context = (SlashCommandContext) e.Context;
+        var reason = FormatFailureReason(context, e.Result);
+        if (string.IsNullOrWhiteSpace(reason))
+            return;
+
+        if (context.Response().HasResponded) // most likely a defer, or possibly a post-handling exception??
+        {
+            await context.Followup().SendAsync(new LocalInteractionFollowup()
+                .WithContent("This command failed to run. Below might be some reasons why:\n" +
+                             Markdown.CodeBlock(reason))
+                .WithIsEphemeral());
+        }
+        else
+        {
+            await context.Response().SendMessageAsync(new LocalInteractionMessageResponse()
+                .WithContent("This command failed to run. Below might be some reasons why:\n" +
+                             Markdown.CodeBlock(reason))
+                .WithIsEphemeral());
+        }
     }
 
     Task IHostedService.StartAsync(CancellationToken cancellationToken)

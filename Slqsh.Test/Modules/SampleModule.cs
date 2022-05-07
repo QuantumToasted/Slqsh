@@ -1,5 +1,6 @@
 ﻿using Disqord;
 using Disqord.Extensions.Interactivity.Menus.Paged;
+using Disqord.Rest;
 using Qmmands;
 
 using DescAttribute = System.ComponentModel.DescriptionAttribute;
@@ -114,5 +115,31 @@ public class SampleModule : SlashModuleBase
             Order order)
     {
         return Response($"You picked: {order}.");
+    }
+
+    [Command("modal")]
+    [Description("Sends a simple modal and waits for your response.")]
+    [RunMode(RunMode.Parallel)]
+    public async Task<SlashCommandResult> ModalAsync()
+    {
+        var modal = await Modal("Sample Modal", new LocalTextInputComponent()
+            .WithLabel("Hello hi")
+            .WithStyle(TextInputComponentStyle.Short)
+            .WithIsRequired()
+            .WithPlaceholder("Say something here"));
+        //var modal = await Modal("Sample Modal", "What would you like to say?", TextInputComponentStyle.Paragraph);
+
+        if (modal is null)
+            return Followup("You didn't fill it out in time.");
+
+        var firstRow = (IRowComponent) modal.Components[0];
+        var component = (ITextInputComponent) firstRow.Components[0];
+
+        await modal.Response()
+            .SendMessageAsync(new LocalInteractionMessageResponse().WithContent($"You submitted: {component.Value}"));
+
+        return default;
+
+        // return Followup($"You submitted: {component.Value}");
     }
 }

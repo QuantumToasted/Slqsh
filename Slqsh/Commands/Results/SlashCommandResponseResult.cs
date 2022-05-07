@@ -2,7 +2,7 @@
 
 namespace Slqsh;
 
-public sealed class SlashCommandResponseResult : SlashCommandResult
+public class SlashCommandResponseResult : SlashCommandResult
 {
     public SlashCommandResponseResult(SlashCommandContext context, LocalInteractionMessageResponse response)
         : base(context)

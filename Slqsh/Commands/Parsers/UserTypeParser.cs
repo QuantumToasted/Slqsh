@@ -8,8 +8,8 @@ public sealed class UserTypeParser<TUser> : SlashGuildCommandTypeParser<TUser>
 {
     public override ValueTask<TypeParserResult<TUser>> ParseAsync(Parameter parameter, string value, SlashGuildCommandContext context)
     {
-        var userId = Snowflake.Parse(value);
-        var user = context.Entities.Users[userId];
-        return Success((TUser) user);
+        return Snowflake.TryParse(value, out var userId)
+            ? Success((TUser) context.Entities.Users[userId])
+            : Failure($"The supplied string \"{value}\" was not a properly formatted Discord ID.");
     }
 }

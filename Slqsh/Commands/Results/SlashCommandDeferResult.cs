@@ -1,6 +1,6 @@
 ﻿namespace Slqsh;
 
-public sealed class SlashCommandDeferResult : SlashCommandResult
+public class SlashCommandDeferResult : SlashCommandResult
 {
     public SlashCommandDeferResult(SlashCommandContext context, bool isEphemeral)
         : base(context)

@@ -65,4 +65,30 @@ public abstract class SlashModuleBase<TContext> : ModuleBase<TContext>
 
     protected SlashCommandDeferResult Defer(bool isEphemeral = false)
         => new(Context, isEphemeral);
+
+    protected SlashCommandModalResult Modal(string title, string label, TextInputComponentStyle style, string preFilledValue = null)
+        => Modal(title, new LocalTextInputComponent().WithLabel(label).WithPrefilledValue(preFilledValue).WithStyle(style).WithCustomId(Guid.NewGuid().ToString()));
+
+    protected SlashCommandModalResult Modal(string title, params LocalTextInputComponent[] components)
+    {
+        if (components.Length == 0)
+            throw new ArgumentException("At least one text input component must be specified.", nameof(components));
+
+        foreach (var component in components)
+        {
+            if (!component.CustomId.HasValue)
+                component.WithCustomId(Guid.NewGuid().ToString());
+        }
+
+        var rows = new List<LocalRowComponent>(components.Length);
+        foreach (var component in components)
+        {
+            rows.Add(new LocalRowComponent().WithComponents(component));
+        }
+
+        return Modal(new LocalInteractionModalResponse().WithTitle(title).WithComponents(rows));
+    }
+
+    protected SlashCommandModalResult Modal(LocalInteractionModalResponse modal)
+        => new(Context, modal);
 }

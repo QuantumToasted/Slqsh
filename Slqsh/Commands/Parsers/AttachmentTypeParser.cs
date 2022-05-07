@@ -7,7 +7,8 @@ public sealed class AttachmentTypeParser : SlashCommandTypeParser<IAttachment>
 {
     public override ValueTask<TypeParserResult<IAttachment>> ParseAsync(Parameter parameter, string value, SlashCommandContext context)
     {
-        var attachmentId = Snowflake.Parse(value);
-        return Success(context.Entities.Attachments[attachmentId]);
+        return Snowflake.TryParse(value, out var attachmentId) 
+            ? Success(context.Entities.Attachments[attachmentId])
+            : Failure($"The supplied string \"{value}\" was not a properly formatted Discord ID.");
     }
 }

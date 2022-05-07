@@ -8,8 +8,8 @@ public sealed class GuildChannelTypeParser<TChannel> : SlashGuildCommandTypePars
 {
     public override ValueTask<TypeParserResult<TChannel>> ParseAsync(Parameter parameter, string value, SlashGuildCommandContext context)
     {
-        var channelId = Snowflake.Parse(value);
-        var channel = context.Entities.Channels[channelId];
-        return Success((TChannel) channel);
+        return Snowflake.TryParse(value, out var channelId)
+            ? Success((TChannel) context.Entities.Channels[channelId])
+            : Failure($"The supplied string \"{value}\" was not a properly formatted Discord ID.");
     }
 }

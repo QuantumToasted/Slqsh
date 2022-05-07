@@ -7,7 +7,7 @@ using Disqord.Extensions.Interactivity.Menus.Paged;
 
 namespace Slqsh;
 
-public sealed class SlashCommandMenuResult : SlashCommandResult
+public class SlashCommandMenuResult : SlashCommandResult
 {
     public SlashCommandMenuResult(SlashCommandContext context, MenuBase menu, bool isEphemeral)
         : base(context)
