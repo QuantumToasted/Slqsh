@@ -578,7 +578,6 @@ public class SlashCommandService : IHostedService
             }
         }
     }
-
     
     public virtual ValueTask HandleModalSubmitAsync(IModalSubmitInteraction interaction)
     {
@@ -590,7 +589,8 @@ public class SlashCommandService : IHostedService
 
         modal.SubmittedModal = interaction;
         modal.Cts.Cancel();
-        return new(interaction.Response().SendMessageAsync(new LocalInteractionMessageResponse().WithContent("test")));
+        return ValueTask.CompletedTask;
+        // return new(interaction.Response().SendMessageAsync(new LocalInteractionMessageResponse().WithContent("test")));
     }
     
 
