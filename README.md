@@ -1,3 +1,5 @@
+# Slqsh has been obsoleted by a first-party release of Disqord.Bot with interactions/slash command support. However, if you for some reason want to still use this, be my guest.
+
 ![slqsh](https://user-images.githubusercontent.com/30324210/157002663-43625fe1-25f4-4bea-8502-1234fe763572.gif)
 
 [![MyGet](https://img.shields.io/myget/quantumtoast/v/Slqsh?style=flat-square)](https://www.myget.org/feed/quantumtoast/package/nuget/Slqsh)
